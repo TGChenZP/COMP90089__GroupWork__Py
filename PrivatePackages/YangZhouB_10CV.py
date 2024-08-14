@@ -671,60 +671,6 @@ class YangZhouB:
         # Display final information
         self.view_best_combo_and_score()
 
-    def tune_parallel(self, part, splits, key_stats_only=False):
-        """ Begin tuning in Parallel """
-
-        assert type(part) is int and type(splits) is int
-
-        if part <= 0 or part > splits:
-            raise ValueError("Part must be within [1, splits]")
-
-        if self.train_x is None or self.train_y is None or self.val_x is None or self.val_y is None or self.test_x is None or self.test_y is None:
-            raise AttributeError(
-                " Missing one of the datasets, please run .read_in_data() ")
-
-        if self.model is None:
-            raise AttributeError(
-                " Missing model, please run .read_in_model() ")
-
-        if self.tuning_result_saving_address is None:
-            raise AttributeError(
-                "Missing tuning result csv saving address, please run .set_tuning_result_saving_address() first")
-
-        self.key_stats_only = key_stats_only
-
-        print("BEGIN TUNING\n\n")
-
-        # FIRST: get all cruise combinations as well as core, and tune all these
-        self._get_core()
-        self._get_cruise_combinations()
-
-        first_round_combinations = copy.deepcopy(self._cruise_combinations)
-        first_round_combinations.append(self._core)
-
-        random.seed(self._seed)
-        random.shuffle(first_round_combinations)
-
-        parallel_combo_to_tune = copy.deepcopy(first_round_combinations)
-        start_index = int((part-1)/splits * len(first_round_combinations))
-        end_index = int(part/splits * len(first_round_combinations))
-        parallel_combo_to_tune = parallel_combo_to_tune[start_index:end_index]
-
-        print(
-            f'Parallel tuning part {part} of Cruise: set to tune {len(parallel_combo_to_tune)} combinations')
-
-        print("STAGE ZERO: Tune all Cruise combinations\n\n")
-        for combo in parallel_combo_to_tune:
-
-            if not self.checked[tuple(combo)]:
-                self._train_and_test_combo(combo)
-
-            else:
-                self._check_already_trained_best_score(combo)
-
-        # Display final information
-        self.view_best_combo_and_score()
-
     def _eval_combo(self, df_building_dict, train_pred, val_pred, i):
 
         if self.clf_type == 'Regression':
