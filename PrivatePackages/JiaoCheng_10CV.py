@@ -3,7 +3,6 @@ import copy
 import time
 import numpy as np
 import pickle
-from collections import defaultdict as dd
 
 from sklearn.metrics import r2_score, mean_absolute_percentage_error, mean_squared_error
 from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score, balanced_accuracy_score, roc_auc_score
@@ -50,11 +49,12 @@ class JiaoCheng:
         self.hyperparameter_default_values = None
         self.best_model_saving_address = None
         self.pytorch_model = False
+        self.optimised_metric = False
 
         self.regression_extra_output_columns = ['Train r2', 'Val r2', 'Test r2',
-                                                'Train RMSE', 'Val RMSE', 'Test RMSE', 'Train MAPE', 'Val MAPE', 'Test MAPE', 'Time']
-        self.classification_extra_output_columns = ['Train accu', 'Val accu', 'Test accu',
-                                                    'Train balanced_accu', 'Val balanced_accu', 'Test balanced_accu', 'Train f1', 'Val f1', 'Test f1',
+                                                'Train rmse', 'Val rmse', 'Test rmse', 'Train mape', 'Val mape', 'Test mape', 'Time']
+        self.classification_extra_output_columns = ['Train accuracy', 'Val accuracy', 'Test accuracy',
+                                                    'Train balanced_accuracy', 'Val balanced_accuracy', 'Test balanced_accuracy', 'Train f1', 'Val f1', 'Test f1',
                                                     'Train precision', 'Val precision', 'Test precision', 'Train recall', 'Val recall', 'Test recall', 'Time']
 
     def read_in_data(self, train_x_list, train_y_list, val_x_list, val_y_list):
@@ -81,19 +81,32 @@ class JiaoCheng:
         self.val_y_list = val_y_list
         print("Read in Val y data list")
 
-    def read_in_model(self, model, type, pytorch_model=False):
+    def read_in_model(self, model, type, optimised_metric=None, pytorch_model=False):
         """ Reads in underlying model object for tuning, and also read in what type of model it is """
 
         assert type == 'Classification' or type == 'Regression'  # check
 
+        self.clf_type = type
+
+        if self.clf_type == 'Classification':
+            assert optimised_metric in [None, 'accuracy', 'f1', 'precision',
+                                        'recall', 'balanced_accuracy', 'AP', 'AUC'], "evaluation_metric for classification must be one of ['accuracy', 'f1', 'precision', 'recall', 'balanced_accuracy', 'AP', 'AUC']"
+        if self.clf_type == 'Regression':
+            assert optimised_metric in [
+                None, 'r2', 'rmse', 'mape'], "evaluation_metric for regression must be one of ['r2', 'rmse', 'mape']"
+
+        if self.clf == 'Classification':
+            self.optimised_metric = 'accuracy' if optimised_metric is None else optimised_metric
+        elif self.clf == 'Regression':
+            self.optimised_metric = 'r2' if optimised_metric is None else optimised_metric
+
         # record
         self.model = model
-        self.clf_type = type
 
         self.pytorch_model = pytorch_model
 
         print(
-            f'Successfully read in model {self.model}, which is a {self.clf_type} model')
+            f'Successfully read in model {self.model}, which is a {self.clf_type} model optimising for {self.optimised_metric}')
 
     def set_hyperparameters(self, parameter_choices):
         """ Input hyperparameter choices """
@@ -123,8 +136,18 @@ class JiaoCheng:
 
         for key in self.parameter_choices:
             tmp = copy.deepcopy(list(self.parameter_choices[key]))
-            tmp.sort()
+            tmp = self._sort_with_none(tmp)
             self.parameter_choices[key] = tuple(tmp)
+
+    def _sort_with_none(lst):
+        """ Helper to sort hyperparameters with None values """
+        if None in lst:
+            no_none_list = [i for i in lst if i is not None]
+            no_none_list.sort()
+            no_none_list = [None]+no_none_list
+            return no_none_list
+        lst.sort()
+        return lst
 
     def _get_combinations(self):
         """ Helper to calculate all combinations """
@@ -407,13 +430,13 @@ class JiaoCheng:
 
             df_building_dict['Train r2'+f' {i}'] = [np.round(train_score, 6)]
             df_building_dict['Val r2'+f' {i}'] = [np.round(val_score, 6)]
-            df_building_dict['Train RMSE'+f' {i}'] = [np.round(train_rmse, 6)]
-            df_building_dict['Val RMSE'+f' {i}'] = [np.round(val_rmse, 6)]
+            df_building_dict['Train rmse'+f' {i}'] = [np.round(train_rmse, 6)]
+            df_building_dict['Val rmse'+f' {i}'] = [np.round(val_rmse, 6)]
 
             if self.key_stats_only == False:
-                df_building_dict['Train MAPE' +
+                df_building_dict['Train mape' +
                                  f' {i}'] = [np.round(train_mape, 6)]
-                df_building_dict['Val MAPE'+f' {i}'] = [np.round(val_mape, 6)]
+                df_building_dict['Val mape'+f' {i}'] = [np.round(val_mape, 6)]
 
         elif self.clf_type == 'Classification':
 
@@ -481,8 +504,9 @@ class JiaoCheng:
             except:
                 pass
 
-            df_building_dict['Train accu'+f' {i}'] = [np.round(train_score, 6)]
-            df_building_dict['Val accu'+f' {i}'] = [np.round(val_score, 6)]
+            df_building_dict['Train accuracy' +
+                             f' {i}'] = [np.round(train_score, 6)]
+            df_building_dict['Val accuracy'+f' {i}'] = [np.round(val_score, 6)]
             df_building_dict['Train balanced_accuracy' +
                              f' {i}'] = [np.round(train_bal_accu, 6)]
             df_building_dict['Val balanced_accuracy' +
@@ -578,12 +602,22 @@ class JiaoCheng:
 
             df_building_dict['Time'+f' {i}'] = [np.round(time_used, 2)]
 
-        df_building_dict['Mean Val Accu'] = [np.round(np.mean(
-            [df_building_dict['Val accu'+f' {i}'][0] for i in range(len(self.train_x_list))]), 6)]
-        df_building_dict['Mean Val Accu Std'] = [np.round(np.std(
-            [df_building_dict['Val accu'+f' {i}'][0] for i in range(len(self.train_x_list))]), 6)]
+        df_building_dict[f'Mean Val {self.optimised_metric}'] = [np.round(np.mean(
+            [df_building_dict[f'Val {self.optimised_metric}'+f' {i}'][0] for i in range(len(self.train_x_list))]), 6)]
+        df_building_dict[f'Mean Val {self.optimised_metric} Std'] = [np.round(np.std(
+            [df_building_dict[f'Val {self.optimised_metric}'+f' {i}'][0] for i in range(len(self.train_x_list))]), 6)]
 
-        val_score = df_building_dict['Mean Val Accu'][0]
+        df_building_dict[f'Mean Train {self.optimised_metric}'] = [np.round(np.mean(
+            [df_building_dict[f'Train {self.optimised_metric}'+f' {i}'][0] for i in range(len(self.train_x_list))]), 6)]
+        df_building_dict[f'Mean Train {self.optimised_metric} Std'] = [np.round(np.std(
+            [df_building_dict[f'Train {self.optimised_metric}'+f' {i}'][0] for i in range(len(self.train_x_list))]), 6)]
+
+        df_building_dict[f'Mean Test {self.optimised_metric}'] = [np.round(np.mean(
+            [df_building_dict[f'Test {self.optimised_metric}'+f' {i}'][0] for i in range(len(self.train_x_list))]), 6)]
+        df_building_dict[f'Mean Test {self.optimised_metric} Std'] = [np.round(np.std(
+            [df_building_dict[f'Test {self.optimised_metric}'+f' {i}'][0] for i in range(len(self.train_x_list))]), 6)]
+
+        val_score = df_building_dict[f'Mean Val {self.optimised_metric}'][0]
 
         for key in df_building_dict:
             if key == 'estimators_list':
@@ -644,17 +678,14 @@ class JiaoCheng:
     def view_best_combo_and_score(self):
         """ View best combination and its validation score """
 
-        print('Max Score: \n', self.best_score)
+        print('Max Val Score: \n', self.best_score)
 
-        if self.clf_type == 'Classification':
-            max_val_id = self.tuning_result['Mean Val Accu'].idxmax()
-            print('Max Val Accu Std: \n',
-                  self.tuning_result.iloc[max_val_id]['Mean Val Accu Std'])
-
-        elif self.clf_type == 'Regression':
-            max_val_id = self.tuning_result['Val r2'].idxmax()
-            print('Max Test Score: \n',
-                  self.tuning_result.iloc[max_val_id]['Test r2'])
+        max_val_id = self.tuning_result[f'Mean Val {self.optimised_metric}'].idxmax(
+        )
+        print('Best Combo Test Score: \n',
+              self.tuning_result.iloc[max_val_id][f'Mean Test {self.optimised_metric}'])
+        print('Best Combo Train Score: \n',
+              self.tuning_result.iloc[max_val_id][f'Mean Train {self.optimised_metric}'])
 
         print('Max Combo Index: \n', self.best_combo, 'out of',
               self.n_items, '(note best combo is 0-indexed)')
@@ -716,10 +747,7 @@ class JiaoCheng:
 
                 combo = tuple(combo)
 
-                if self.clf_type == 'Regression':
-                    self.result[combo] = row[1]['Val r2']
-                elif self.clf_type == 'Classification':
-                    self.result[combo] = row[1]['Mean Val Accu']
+                self.result[combo] = row[1][f'Mean Val {self.optimised_metric}']
 
                 self._up_to += 1
 
