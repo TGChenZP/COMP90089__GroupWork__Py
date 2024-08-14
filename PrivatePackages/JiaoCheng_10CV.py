@@ -678,14 +678,21 @@ class JiaoCheng:
     def view_best_combo_and_score(self):
         """ View best combination and its validation score """
 
-        print('Max Val Score: \n', self.best_score)
-
         max_val_id = self.tuning_result[f'Mean Val {self.optimised_metric}'].idxmax(
         )
-        print('Best Combo Test Score: \n',
-              self.tuning_result.iloc[max_val_id][f'Mean Test {self.optimised_metric}'])
+
+        print(f'Max Val {self.optimised_metric}: \n', self.best_score)
+        print(f'Max Val {self.optimised_metric} Std: \n',
+              self.tuning_result.iloc[max_val_id][f'Mean Val {self.optimised_metric} Std'])
+
         print('Best Combo Train Score: \n',
               self.tuning_result.iloc[max_val_id][f'Mean Train {self.optimised_metric}'])
+        print(f'Max Train {self.optimised_metric} Std: \n',
+              self.tuning_result.iloc[max_val_id][f'Mean Train {self.optimised_metric} Std'])
+        print('Best Combo Test Score: \n',
+              self.tuning_result.iloc[max_val_id][f'Mean Test {self.optimised_metric}'])
+        print(f'Max Test {self.optimised_metric} Std: \n',
+              self.tuning_result.iloc[max_val_id][f'Mean Test {self.optimised_metric} Std'])
 
         print('Max Combo Index: \n', self.best_combo, 'out of',
               self.n_items, '(note best combo is 0-indexed)')
