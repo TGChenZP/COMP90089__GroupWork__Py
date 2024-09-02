@@ -968,11 +968,11 @@ class YangZhouB:
 
         print('Best Combo Train Score: \n',
               self.tuning_result.iloc[max_val_id][f'Mean Train {self.optimised_metric}'])
-        print(f'Max Train Score Std: \n',
+        print(f'Best Combo Train Score Std: \n',
               self.tuning_result.iloc[max_val_id][f'Mean Train {self.optimised_metric} Std'])
         print('Best Combo Test Score: \n',
               self.tuning_result.iloc[max_val_id][f'Mean Test {self.optimised_metric}'])
-        print(f'Max Test Score Std: \n',
+        print(f'Best Combo Test Score Std: \n',
               self.tuning_result.iloc[max_val_id][f'Mean Test {self.optimised_metric} Std'])
 
         print('Max Combo Index: \n', self.best_combo, 'out of',
