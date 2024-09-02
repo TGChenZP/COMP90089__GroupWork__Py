@@ -10,7 +10,7 @@ from scipy.spatial.distance import cdist
 from scipy.stats import t
 
 from sklearn.metrics import r2_score, mean_absolute_percentage_error, mean_squared_error
-from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score, balanced_accuracy_score, roc_auc_score
+from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score, balanced_accuracy_score, roc_auc_score, average_precision_score
 
 
 class YangZhouB:
@@ -62,12 +62,6 @@ class YangZhouB:
         self.best_model_saving_address = None
         self.pytorch_model = False
         self.optimised_metric = False
-
-        self.regression_extra_output_columns = ['Train r2', 'Val r2', 'Test r2',
-                                                'Train rmse', 'Val rmse', 'Test rmse', 'Train mape', 'Val mape', 'Test mape', 'Time']
-        self.classification_extra_output_columns = ['Train accuracy', 'Val accuracy', 'Test accuracy',
-                                                    'Train balanced_accuracy', 'Val balanced_accuracy', 'Test balanced_accuracy', 'Train f1', 'Val f1', 'Test f1',
-                                                    'Train precision', 'Val precision', 'Test precision', 'Train recall', 'Val recall', 'Test recall', 'Time']
 
     def read_in_data(self, train_x_list, train_y_list, val_x_list, val_y_list):
         """ Reads in train validate test data for tuning """
@@ -173,15 +167,6 @@ class YangZhouB:
         """ Helper to set up tuning result dataframe """
 
         tune_result_columns = copy.deepcopy(self.hyperparameters)
-
-        # if self._tune_features:
-        #     tune_result_columns.append('feature combo ningxiang score')
-
-        # # Different set of metric columns for different types of models
-        # if self.clf_type == 'Classification':
-        #     tune_result_columns.extend(self.classification_extra_output_columns)
-        # elif self.clf_type == 'Regression':
-        #     tune_result_columns.extend(self.regression_extra_output_columns)
 
         self.tuning_result = pd.DataFrame(
             {col: list() for col in tune_result_columns})
@@ -722,7 +707,8 @@ class YangZhouB:
         elif self.clf_type == 'Classification':
 
             train_score = val_score = train_bal_accu = val_bal_accu = train_f1 = val_f1 = \
-                train_precision = val_precision = train_recall = val_recall = train_auc = val_auc = 0
+                train_precision = val_precision = train_recall = val_recall = train_auc = val_auc = \
+                train_ap = val_ap = 0
 
             try:
                 train_score = accuracy_score(self.train_y_list[i], train_pred)
@@ -730,17 +716,6 @@ class YangZhouB:
                 pass
             try:
                 val_score = accuracy_score(self.val_y_list[i], val_pred)
-            except:
-                pass
-
-            try:
-                train_bal_accu = balanced_accuracy_score(
-                    self.train_y_list[i], train_pred)
-            except:
-                pass
-            try:
-                val_bal_accu = balanced_accuracy_score(
-                    self.val_y_list[i], val_pred)
             except:
                 pass
 
@@ -776,22 +751,40 @@ class YangZhouB:
                     self.val_y_list[i], val_pred, average='binary')
             except:
                 pass
-            try:
-                train_auc = roc_auc_score(self.train_y_list[i], train_pred)
-            except:
-                pass
-            try:
-                val_auc = roc_auc_score(self.val_y_list[i], val_pred)
-            except:
-                pass
+
+            if self.key_stats_only == False:
+                try:
+                    train_bal_accu = balanced_accuracy_score(
+                        self.train_y_list[i], train_pred)
+                except:
+                    pass
+                try:
+                    val_bal_accu = balanced_accuracy_score(
+                        self.val_y_list[i], val_pred)
+                except:
+                    pass
+                try:
+                    train_auc = roc_auc_score(self.train_y_list[i], train_pred)
+                except:
+                    pass
+                try:
+                    val_auc = roc_auc_score(self.val_y_list[i], val_pred)
+                except:
+                    pass
+                try:
+                    train_ap = average_precision_score(
+                        self.train_y_list[i], train_pred)
+                except:
+                    pass
+                try:
+                    val_ap = average_precision_score(
+                        self.val_y_list[i], val_pred)
+                except:
+                    pass
 
             df_building_dict['Train accuracy' +
                              f' {i}'] = [np.round(train_score, 6)]
             df_building_dict['Val accuracy'+f' {i}'] = [np.round(val_score, 6)]
-            df_building_dict['Train balanced_accuracy' +
-                             f' {i}'] = [np.round(train_bal_accu, 6)]
-            df_building_dict['Val balanced_accuracy' +
-                             f' {i}'] = [np.round(val_bal_accu, 6)]
             df_building_dict['Train f1'+f' {i}'] = [np.round(train_f1, 6)]
             df_building_dict['Val f1'+f' {i}'] = [np.round(val_f1, 6)]
             df_building_dict['Train precision' +
@@ -801,8 +794,17 @@ class YangZhouB:
             df_building_dict['Train recall' +
                              f' {i}'] = [np.round(train_recall, 6)]
             df_building_dict['Val recall'+f' {i}'] = [np.round(val_recall, 6)]
-            df_building_dict['Train auc'+f' {i}'] = [np.round(train_auc, 6)]
-            df_building_dict['Val auc'+f' {i}'] = [np.round(val_auc, 6)]
+
+            if self.key_stats_only == False:
+                df_building_dict['Train balanced_accuracy' +
+                                 f' {i}'] = [np.round(train_bal_accu, 6)]
+                df_building_dict['Val balanced_accuracy' +
+                                 f' {i}'] = [np.round(val_bal_accu, 6)]
+                df_building_dict['Train AUC' +
+                                 f' {i}'] = [np.round(train_auc, 6)]
+                df_building_dict['Val AUC'+f' {i}'] = [np.round(val_auc, 6)]
+                df_building_dict['Train AP'+f' {i}'] = [np.round(train_ap, 6)]
+                df_building_dict['Val AP'+f' {i}'] = [np.round(val_ap, 6)]
 
         return df_building_dict
 
@@ -960,17 +962,17 @@ class YangZhouB:
         max_val_id = self.tuning_result[f'Mean Val {self.optimised_metric}'].idxmax(
         )
 
-        print(f'Max Val {self.optimised_metric}: \n', self.best_score)
-        print(f'Max Val {self.optimised_metric} Std: \n',
+        print(f'Max Val Score: \n', self.best_score)
+        print(f'Max Val Score Std: \n',
               self.tuning_result.iloc[max_val_id][f'Mean Val {self.optimised_metric} Std'])
 
         print('Best Combo Train Score: \n',
               self.tuning_result.iloc[max_val_id][f'Mean Train {self.optimised_metric}'])
-        print(f'Max Train {self.optimised_metric} Std: \n',
+        print(f'Max Train Score Std: \n',
               self.tuning_result.iloc[max_val_id][f'Mean Train {self.optimised_metric} Std'])
         print('Best Combo Test Score: \n',
               self.tuning_result.iloc[max_val_id][f'Mean Test {self.optimised_metric}'])
-        print(f'Max Test {self.optimised_metric} Std: \n',
+        print(f'Max Test Score Std: \n',
               self.tuning_result.iloc[max_val_id][f'Mean Test {self.optimised_metric} Std'])
 
         print('Max Combo Index: \n', self.best_combo, 'out of',
