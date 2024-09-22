@@ -1,2 +1,4 @@
 *.pyc
 *.DS_Store
+/models/tuning
+/models/tmp_models
