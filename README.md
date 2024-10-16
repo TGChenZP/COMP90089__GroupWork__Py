@@ -29,13 +29,10 @@ This project aims to predict mortality in Intensive Care Unit (ICU) patients usi
    - `data_preprocessing_dropna.ipynb`
    - `data_preprocessing_for_modelling.ipynb`
 
-2. **Exploratory Data Analysis (EDA)**:
+
+2. **Feature Selection**:
    - Visualizing data distributions
    - Analyzing correlations between features
-   Relevant notebook:
-   - `EDA_feature_selection.ipynb`
-
-3. **Feature Selection**:
    - Mann-Whitney U Test for continuous variables
    - Chi-Square Test for categorical variables
    - Spearman Correlation analysis for identifying highly correlated features
@@ -43,13 +40,13 @@ This project aims to predict mortality in Intensive Care Unit (ICU) patients usi
    - `EDA_feature_selection.ipynb`
    - `feature_selection_iter2.ipynb`
 
-4. **Model Development**:
+3. **Model Development**:
    - Training various models including XGBoost, Logistic Regression, SVM, Neural Networks
    - Hyperparameter tuning using cross-validation
    Relevant notebooks:
    - Notebooks in the `tuning/` directory for different models
 
-5. **Model Evaluation**:
+4. **Model Evaluation**:
    - Performance metrics calculation (e.g., F1 score, AUC-ROC)
    - Feature importance analysis
    - SHAP (SHapley Additive exPlanations) analysis for model interpretability
