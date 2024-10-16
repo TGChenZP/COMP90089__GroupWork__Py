@@ -56,23 +56,16 @@ This project aims to predict mortality in Intensive Care Unit (ICU) patients usi
 ## Results
 The final results, including model performance metrics and feature importance, are presented in the `FinalResults.ipynb` notebook.
 
-## Requirements
-- Python 3.x
-- Pandas
-- NumPy
-- Scikit-learn
-- XGBoost
-- Matplotlib
-- Seaborn
-- SHAP
-
 ## Usage
 1. Clone the repository
 2. Install required packages: `pip install -r requirements.txt`
 3. Run the notebooks in the order mentioned in the "Key Steps" section
 
 ## Contributors
-[List of team members or contributors]
+Jiayuan Li
+Lang Chen
+Xinyi Wang
+Zixuan Guo
 
 ## License
 [Specify the license under which this project is released]
