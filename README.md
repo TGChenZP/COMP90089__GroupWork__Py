@@ -19,28 +19,42 @@ This project aims to predict mortality in Intensive Care Unit (ICU) patients usi
 - `models/`: Saved model files and feature importance data
 
 ## Key Steps
+
 1. **Data Preprocessing**: 
    - Initial data selection from MIMIC-IV
    - Handling missing values
    - Feature engineering
+   Relevant notebooks:
+   - `data_preprocessing_data_select.ipynb`
+   - `data_preprocessing_dropna.ipynb`
+   - `data_preprocessing_for_modelling.ipynb`
 
 2. **Exploratory Data Analysis (EDA)**:
    - Visualizing data distributions
    - Analyzing correlations between features
+   Relevant notebook:
+   - `EDA_feature_selection.ipynb`
 
 3. **Feature Selection**:
    - Mann-Whitney U Test for continuous variables
    - Chi-Square Test for categorical variables
    - Spearman Correlation analysis for identifying highly correlated features
+   Relevant notebooks:
+   - `EDA_feature_selection.ipynb`
+   - `feature_selection_iter2.ipynb`
 
 4. **Model Development**:
    - Training various models including XGBoost, Logistic Regression, SVM, Neural Networks
    - Hyperparameter tuning using cross-validation
+   Relevant notebooks:
+   - Notebooks in the `tuning/` directory for different models
 
 5. **Model Evaluation**:
    - Performance metrics calculation (e.g., F1 score, AUC-ROC)
    - Feature importance analysis
    - SHAP (SHapley Additive exPlanations) analysis for model interpretability
+   Relevant notebook:
+   - `FinalResults.ipynb`
 
 ## Results
 The final results, including model performance metrics and feature importance, are presented in the `FinalResults.ipynb` notebook.
